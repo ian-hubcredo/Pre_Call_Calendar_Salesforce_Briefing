@@ -1,0 +1,1241 @@
+{
+  "name": "Pre-Call Automation Calendar and Salesforce lookup",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "<REDACTED_EMAIL>",
+          "mode": "list",
+          "cachedResultName": "<REDACTED_EMAIL>"
+        },
+        "returnAll": true,
+        "timeMax": "={{ $now.plus({ day: 1 }) }}",
+        "options": {
+          "recurringEventHandling": "next"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        512
+      ],
+      "id": "aa77284f-2118-409d-9246-6ae39e1c404b",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "attendees",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "summary, start.dateTime, end.dateTime, description, location",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        528
+      ],
+      "id": "71987ce3-0e19-49ea-9906-0c9055a9b47c",
+      "name": "Split Out",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "629023e2-8433-466e-ad34-8674e13df805",
+              "name": "attendee_email",
+              "value": "={{ $json.attendees.email }}",
+              "type": "string"
+            },
+            {
+              "id": "b16c8f37-c720-436b-af9c-ab95afef7a30",
+              "name": "attendee_company_domain",
+              "value": "={{ $json.attendees.email.extractDomain() }}",
+              "type": "string"
+            },
+            {
+              "id": "d6e86287-b460-4432-875a-e0f30ce1ffc9",
+              "name": "metting_title",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "55459b26-bd9b-4f2d-8a63-f040f3b1b7ac",
+              "name": "meeting_description",
+              "value": "={{ $json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "571e4f62-da4b-4839-b86d-c5c71318bf67",
+              "name": "meeting_location",
+              "value": "={{ $json.location }}",
+              "type": "string"
+            },
+            {
+              "id": "fc1d0c07-480f-4ff8-b954-8e4e0cbf49b6",
+              "name": "start_dateTime",
+              "value": "={{ $json[\"start.dateTime\"] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        528
+      ],
+      "id": "70dfe474-8239-4e90-ba45-4dccceb38c32",
+      "name": "Extract Attendee Details"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"company_description\": \"...\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3456,
+        896
+      ],
+      "id": "d3eaf27e-b0a0-4819-9650-cefb9bc16ec7",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        624
+      ],
+      "id": "8bbee4e6-88df-49ab-be46-9b13c69f209a",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        848,
+        512
+      ],
+      "id": "b0fac40b-b6d1-4efa-8114-fe4f7356c288",
+      "name": "Split in Batches Event wise"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c131b333-b75e-4c35-b0f8-38b82d4a0f35",
+              "leftValue": "={{ $json.attendee_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        528
+      ],
+      "id": "9b6f35c4-81de-4ef7-9b5b-e866e9958862",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"potential_fit_with_shout_about_us\": \"___\",\n\"call_focus_areas\": \"___\",\n\"strategic_angle\": \"___\",\n\"next_step_suggestion\" :\"___\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        4160,
+        864
+      ],
+      "id": "03fceb4f-4197-4d0a-a203-0759eb7142b9",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "=1asggfRKeeDSO3tfQHnfKuJtbY39us6ehThTbiEjPKhI",
+        "simple": false,
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "=-------------------------------------------------------------------------------------------------------------------------------\n\nMeeting Time : {{ $json.output.meeting_time }}\n\nMeeting Details : \n{{ $json.output.meeting_details }}\n\n\nCompany Overview:\n{{ $json.output.company_overview }}\n\n\nValue Proposition : \n{{ $json.output.value_proposition }}\n\n\nCall Strategy :\n{{ $json.output.call_strategy }}\n\n\nNext Steps Suggestion : \n{{ $json.output.next_steps_suggestion }}\n\n\nSalesforce Summary : \n{{ $json.output.salesforce_summary }}\n\n"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        5072,
+        624
+      ],
+      "id": "bd1b9884-e44a-406e-91ba-410dfb6432a4",
+      "name": "Update a document"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"meeting_time\" : \"__\",\n  \"meeting_details\": \"List the attendees, their titles, and roles.\",\n  \"company_overview\": \"Provide a brief summary of the prospect's company.\",\n  \"value_proposition\": \"Summarize how we can help and why we are a good potential fit.\",\n  \"call_strategy\": \"Outline the key focus areas and the main strategic angle for the call.\",\n  \"next_steps_suggestion\": \"State the suggested next action item to propose at the end of the call.\",\n  \"salesforce_summary\": \"Provide a concise summary of the relationship status, key insights, pain points, and action items from Salesforce.\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        4864,
+        880
+      ],
+      "id": "424a1f73-2bd0-4550-927c-f048afbf78f9",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "629023e2-8433-466e-ad34-8674e13df805",
+              "name": "attendee_email",
+              "value": "={{ $json.attendee_email }}",
+              "type": "string"
+            },
+            {
+              "id": "b16c8f37-c720-436b-af9c-ab95afef7a30",
+              "name": "attendee_company_domain",
+              "value": "={{ $json.attendee_company_domain }}",
+              "type": "string"
+            },
+            {
+              "id": "d6e86287-b460-4432-875a-e0f30ce1ffc9",
+              "name": "metting_title",
+              "value": "={{ $json.metting_title }}",
+              "type": "string"
+            },
+            {
+              "id": "55459b26-bd9b-4f2d-8a63-f040f3b1b7ac",
+              "name": "meeting_description",
+              "value": "={{ $json.meeting_description }}",
+              "type": "string"
+            },
+            {
+              "id": "571e4f62-da4b-4839-b86d-c5c71318bf67",
+              "name": "meeting_location",
+              "value": "={{ $json.meeting_location }}",
+              "type": "string"
+            },
+            {
+              "id": "74e7e4e4-e861-4e02-b37d-afe3902550a9",
+              "name": "start_dateTime",
+              "value": "={{ $json.start_dateTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2176,
+        624
+      ],
+      "id": "15145cac-d35f-4300-94e8-96d7c45bb453",
+      "name": "Set Attendee Details"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23f2ae88-fcf1-4eca-86d5-f756c0a97c4c",
+              "name": "attendee_email",
+              "value": "={{ $('Set Attendee Details').item.json.attendee_email }}",
+              "type": "string"
+            },
+            {
+              "id": "623d8316-e3a4-4c6b-8ca8-d91577e41965",
+              "name": "attendee_full_name",
+              "value": "={{ $json.person.name }}",
+              "type": "string"
+            },
+            {
+              "id": "221a4d0c-8e62-40f4-a097-19aeaf7f588b",
+              "name": "attendee_linkedin_url",
+              "value": "={{ $json.person.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "4f262553-82e0-4796-a3c3-52ec8b2dbbbd",
+              "name": "attendee_title",
+              "value": "={{ $json.person.title }}",
+              "type": "string"
+            },
+            {
+              "id": "e58b052f-6d4a-4ebf-8b0b-61cc75266dfa",
+              "name": "company_name",
+              "value": "={{ $json.person.employment_history[0].organization_name }}",
+              "type": "string"
+            },
+            {
+              "id": "65fc1090-ef58-4014-b8c4-9412247953b4",
+              "name": "attendee_company_domain",
+              "value": "={{ $json.person.organization.primary_domain }}",
+              "type": "string"
+            },
+            {
+              "id": "fe5824cb-3f3f-473d-a192-4ae3001c6f50",
+              "name": "metting_title",
+              "value": "={{ $('Set Attendee Details').item.json.metting_title }}",
+              "type": "string"
+            },
+            {
+              "id": "e6ac673f-e06a-4f4b-9a0b-7a5ca80c575a",
+              "name": "meeting_description",
+              "value": "={{ $('Set Attendee Details').item.json.meeting_description }}",
+              "type": "string"
+            },
+            {
+              "id": "5ee41b7e-bc83-40f7-9f12-06463a99a82b",
+              "name": "meeting_location",
+              "value": "={{ $('Set Attendee Details').item.json.meeting_location }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2624,
+        624
+      ],
+      "id": "c0d98914-259c-439b-be6f-246bb49bba58",
+      "name": "Set Details After Apollo Enrichment"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3296,
+        896
+      ],
+      "id": "4f5c60ec-61fe-40ef-98f8-93a0307291bd",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "<REDACTED_CREDENTIAL_ID>", "name": "<REDACTED_CREDENTIAL_NAME>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Given the company name and domain extracted from an employee email, provide a short description.\nCompany Name : {{ $('Set Details After Apollo Enrichment').item.json.company_name }}\nCompany Domain : {{ $('Set Details After Apollo Enrichment').item.json.attendee_company_domain }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an AI business information lookup assistant. \nYour task is to provide a concise, accurate company description based on the given company domain. \nUse trusted business directories, company websites, and credible sources for the information. \nThe company description should summarize the company's industry, products or services, target market, and any notable facts, in 100 words. \nIf no reliable data is found, return \"not found\" for both fields. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3312,
+        624
+      ],
+      "id": "163d09f3-657b-47ac-a269-2fb03a2d6187",
+      "name": "Company Description AI Agent",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Use the context below to generate a concise, action‑ready pre‑call brief for Cobi, following the exact Output Structure and focusing on strategic value over repetition.​\n\nInputs:​\n\nCompany Details : \nCompany Description : ​{{ $json.company_description }}\n\nMeeting attendees and their roles: \nAttendee Name : ​{{ $json.attendee_full_name }}\nAttendee Title : {{ $json.attendee_title }}\n\nSalesforce Interaction Summary (Previous conversations, notes, or emails) : \n{{ $json.salesforce_interaction_summary }}\n\nMeeting Title: {{ $json.metting_title }}\nMeeting Description : {{ $json.meeting_description }}\n\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a senior growth strategist and sales coach for Shout About Us — an API/platform that provides review data, responses, and insights for SaaS, data & analytics providers, and agencies.\n\nReference the other inputs such as:\nCompany background (industry, size, product, positioning, use case)\n\nMeeting attendees and their roles\n\nAny previous conversations, notes, or emails with this company provided through salesforce interaction summary.\n\nIf Salesforce Interaction summary Exists, ensure to use it for analysis and answering.\n\nYour task:\nAnalyze all of this information and generate a concise, actionable overview that prepares Cobi for the sales call. Focus on strategic value, not repetition of facts.\nOutput Structure:\n\n● Potential Fit with Shout About Us (2-3 sentences) – How our review data, \nresponses, or insights could create value for their platform or customers.\n● Call Focus Areas (3-5 bullet points) – What to emphasize during the call to \nmaximize alignment and close likelihood (e.g. speed to market, dev cost savings, \npartner examples, API simplicity, SDK plans, etc.).\n● Strategic Angle (1 paragraph) – Summarize the “storyline” that will likely \nresonate most with them (e.g., “Position SAU as the infrastructure layer for their \nvoice-of-customer or AI insights roadmap”).\n● Next Step Suggestion (optional) – The best call-to-action or follow-up offer to \nmove the deal forward (e.g. free trial, sample data, co-branded dashboard demo).\nBe direct, persuasive, and strategic — the goal is to equip Cobi to guide the conversation \ntoward a partnership or pilot.\n\n\nOutput Format : \n\n{\n\"potential_fit_with_shout_about_us\": \"___\",\n\"call_focus_areas\": \"___\",\n\"strategic_angle\": \"___\",\n\"next_step_suggestion\" :\"___\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3968,
+        624
+      ],
+      "id": "4b32234b-c7a7-4899-b069-f59ed943e381",
+      "name": "Shout About Us Help AI Agent",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the information below, please generate the pre-call planning document :\n\nMeeting Time : {{ $json.start_dateTime }} (Convert it to Readable Format)\n\nMeeting Title: {{ $('Set Details for Formatter Agent').item.json.metting_title }}\n\nAttendee : {{ $('Set Details for Formatter Agent').item.json.attendee_full_name }} \n\nAttendee Title : : {{ $('Set Details for Formatter Agent').item.json.attendee_title }}\n\nAttendee LinkedIn : {{ $('Set Details for Formatter Agent').item.json.attendee_linkedin_url }}\n\n\nCompany Description: {{ $('Set Details for Formatter Agent').item.json.company_description }}\n\nHow Shout About Us Can Help: \n\nPotential Fit with Shout About Us : {{ $json.potential_fit_with_shout_about_us }}\n\nCall Focus Areas : {{ $json.call_focus_areas }}\n\nStrategic Angle : {{ $json.strategic_angle }}\n\nNext Step Suggestion : {{ $json.next_step_suggestion }}\n\nSalesforce Interaction Summary : {{ $json.salesforce_interaction_summary }}\n\n\n\n\n\n\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an expert Sales Strategist AI. Your purpose is to synthesize raw information about a prospect and create a concise, structured pre-call planning document in a simple JSON format.\n\nInstructions:\n\nRead all the provided information, which may include company details, contact information, and a summary of previous interactions from a CRM like Salesforce.\n\nAnalyze the content to generate a summary for each of the following strategic areas:\n\nmeeting_details: Identify and list the key attendees, their titles, and their roles in the meeting.\n\ncompany_overview: Write a brief, one-paragraph summary of what the prospect's company does.\n\nvalue_proposition: Summarize how our product/service can help this specific prospect and why it's a strong potential fit for their business.\n\ncall_strategy: Outline the most important topics to focus on and describe the overall strategic angle or approach for the call.\n\nnext_steps_suggestion: Propose a clear, actionable next step to suggest at the end of the conversation.\n\nsalesforce_summary: Condense the provided CRM data into a concise summary covering the relationship status, key insights, and primary action items.\n\nYour analysis must be objective and based only on the information provided.\n\nYour final output must be a single, valid JSON object that strictly follows the required structure. Do not add any text or explanations outside of the JSON object itself."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        4704,
+        624
+      ],
+      "id": "de3f1b8c-c231-4eb1-b242-5dad62f8c002",
+      "name": "Content Formatter Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "99dd4c32-843b-4ade-9c27-e66755d09cba",
+              "name": "attendee_full_name",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.attendee_full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "b746c5bc-f4d2-4779-b7d4-81aa89620402",
+              "name": "attendee_email",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.attendee_email }}",
+              "type": "string"
+            },
+            {
+              "id": "4926343b-8ef8-40ed-95de-35b5b8b9a9da",
+              "name": "attendee_linkedin_url",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.attendee_linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "d5a9a72a-ae07-4c63-9e3b-7abcae529628",
+              "name": "attendee_title",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.attendee_title }}",
+              "type": "string"
+            },
+            {
+              "id": "7c71bd57-19ac-4ee5-b500-61ae8279727c",
+              "name": "company_name",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "2b77af6c-1c35-43b1-82e5-3f321bc65209",
+              "name": "company_description",
+              "value": "={{ $json.output.company_description }}",
+              "type": "string"
+            },
+            {
+              "id": "b31490e8-bcb8-4e64-9eb9-af605aae0cd9",
+              "name": "metting_title",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.metting_title }}",
+              "type": "string"
+            },
+            {
+              "id": "40034172-0e33-4305-871e-fdfce178102e",
+              "name": "meeting_description",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.meeting_description }}",
+              "type": "string"
+            },
+            {
+              "id": "86b0e9c3-0b10-44c5-ad8a-1e84b5bb6a6c",
+              "name": "meeting_location",
+              "value": "={{ $('Set Details After Apollo Enrichment').item.json.meeting_location }}",
+              "type": "string"
+            },
+            {
+              "id": "27c2488e-1e0b-4878-b12f-c7befc1d1bc5",
+              "name": "salesforce_interaction_summary",
+              "value": "={{ $('Set Salesforce and Attendee Details').item.json.salesforce_interaction_summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3696,
+        624
+      ],
+      "id": "9dcd4e3a-9739-4b9b-8e0b-bf2cf738738d",
+      "name": "Set Details"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bba8bc66-c672-425d-8580-4c7cf7c3986e",
+              "name": "attendee_full_name",
+              "value": "={{ $('Set Details').item.json.attendee_full_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ecd9fa13-79ff-4db6-b1de-d7b434086748",
+              "name": "attendee_email",
+              "value": "={{ $('Set Details').item.json.attendee_email }}",
+              "type": "string"
+            },
+            {
+              "id": "c1941cee-4a5f-409b-8bd7-e995cd079057",
+              "name": "attendee_title",
+              "value": "={{ $('Set Details').item.json.attendee_title }}",
+              "type": "string"
+            },
+            {
+              "id": "7c39abf1-e077-489b-a184-e4b9471a30ed",
+              "name": "attendee_linkedin_url",
+              "value": "={{ $('Set Details').item.json.attendee_linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "ebf3d53c-7037-46a4-ba2e-546c889caa7b",
+              "name": "company_name",
+              "value": "={{ $('Set Details').item.json.company_name }}",
+              "type": "string"
+            },
+            {
+              "id": "295b28b0-6763-4d98-9049-3d4a61743a2e",
+              "name": "company_description",
+              "value": "={{ $('Set Details').item.json.company_description }}",
+              "type": "string"
+            },
+            {
+              "id": "69a8b441-6f3d-49b5-aaf2-7e65ce19910c",
+              "name": "metting_title",
+              "value": "={{ $('Set Details').item.json.metting_title }}",
+              "type": "string"
+            },
+            {
+              "id": "fc2ee265-782c-493c-81f2-1a6455e22ddd",
+              "name": "meeting_location",
+              "value": "={{ $('Set Details').item.json.meeting_location }}",
+              "type": "string"
+            },
+            {
+              "id": "35885f0d-1f0d-414e-8638-70d7b0054595",
+              "name": "salesforce_interaction_summary",
+              "value": "={{ $('Set Details').item.json.salesforce_interaction_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "b66ab364-07ea-4f7a-8b64-eef6e0075174",
+              "name": "potential_fit_with_shout_about_us",
+              "value": "={{ $json.output.potential_fit_with_shout_about_us }}",
+              "type": "string"
+            },
+            {
+              "id": "943d4496-3dfd-4aa4-9705-44f4bf7bf3a0",
+              "name": "call_focus_areas",
+              "value": "={{ $json.output.call_focus_areas }}",
+              "type": "string"
+            },
+            {
+              "id": "86428078-067a-46e7-9413-195e71e10c96",
+              "name": "strategic_angle",
+              "value": "={{ $json.output.strategic_angle }}",
+              "type": "string"
+            },
+            {
+              "id": "a92bed90-1821-4e63-ad80-cf9b31442801",
+              "name": "next_step_suggestion",
+              "value": "={{ $json.output.next_step_suggestion }}",
+              "type": "string"
+            },
+            {
+              "id": "16174e16-6e2f-4d9c-be77-d0c567a09e4f",
+              "name": "start_dateTime",
+              "value": "={{ $('Set Attendee Details').item.json.start_dateTime }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4448,
+        624
+      ],
+      "id": "21e3b261-4f13-4537-ab42-8fda5888de69",
+      "name": "Set Details for Formatter Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/api/v1/people/match",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "<CLAY_API_KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"email\" : \"{{ $json.attendee_email }}\",\n  \"reveal_personal_emails\" : true,\n  \"reveal_phone_number\" : false\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        624
+      ],
+      "id": "999b7fa8-bacd-45fb-a3d0-ba30521462f4",
+      "name": "Enrich People Information using Apollo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1b28bc1f-87a0-45b9-b672-45c9282bdffd",
+              "leftValue": "={{ $json.attendees.email }}",
+              "rightValue": "@shoutaboutus.com",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        528
+      ],
+      "id": "dcb84abb-44f1-4bd3-bc22-8d9cf854015a",
+      "name": "Ignore shoutaboutus Emails",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e798a815-bc8c-49ac-8f28-dca8d312b819",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        512
+      ],
+      "id": "b44ddb95-4449-4073-b779-e3f9209a14dc",
+      "name": "Ignore Cancelled Events"
+    },
+    {
+      "parameters": {
+        "content": "## Automated Workflow for Generating Personalized Meeting Summaries and Google Docs\n\n- **Step 1:** Trigger the workflow manually to start the process.\n- **Step 2:** Retrieve upcoming events from a specified Google Calendar.\n- **Step 3:** Filter out cancelled events and ignore emails from specific domains (e.g., shoutaboutus.com).\n- **Step 4:** Extract attendee email and derive the company domain from the email address.\n- **Step 5:** Enrich attendee information using Apollo API to get full name, LinkedIn URL, job title, and company name.\n- **Step 6:** Use an AI agent to generate a concise company description based on the company name and domain.\n- **Step 7:** Use a second AI agent to generate a personalized explanation of how Shout About Us can help the company, tailored to the company description, meeting details, and attendee title.\n- **Step 8:** Format all gathered information and AI-generated content into a structured Markdown summary suitable for Google Docs.\n- **Step 9:** Create a new Google Docs document with a dynamic title based on the company name.\n- **Step 10:** Update the Google Docs document by inserting the formatted meeting summary content.\n- **Step 11:** The workflow processes multiple events and attendees in batches, ensuring scalability and efficient handling of multiple meetings.\n",
+        "height": 400,
+        "width": 1120,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "b79ea522-42a9-457c-ba98-214491e17e25",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 16
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        96,
+        512
+      ],
+      "id": "f069ac47-64c9-471c-a8d8-4a86bc8d99f7",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "64837c5d-9964-4493-a919-5f774c7be19d",
+              "name": "salesforce_interaction_summary",
+              "value": "={{ $json.salesforce_interaction_summary || \"Not Found\"}}",
+              "type": "string"
+            },
+            {
+              "id": "d6008c8a-592c-4376-b5ee-483f1a7c0cc1",
+              "name": "attendee_email",
+              "value": "={{ $('Set Attendee Details').item.json.attendee_email }}",
+              "type": "string"
+            },
+            {
+              "id": "a668ef73-d523-4f94-ad19-9349a72f6be7",
+              "name": "attendee_company_domain",
+              "value": "={{ $('Set Attendee Details').item.json.attendee_company_domain }}",
+              "type": "string"
+            },
+            {
+              "id": "d14ada70-d390-4802-8797-8f3ff67e6378",
+              "name": "metting_title",
+              "value": "={{ $('Set Attendee Details').item.json.metting_title }}",
+              "type": "string"
+            },
+            {
+              "id": "520d7ed1-451a-4ea0-95f4-8b200195c945",
+              "name": "meeting_description",
+              "value": "={{ $('Set Attendee Details').item.json.meeting_description }}",
+              "type": "string"
+            },
+            {
+              "id": "fcd6584d-882a-4743-bf8b-b3a4f8619440",
+              "name": "meeting_location",
+              "value": "={{ $('Set Attendee Details').item.json.meeting_location }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3072,
+        624
+      ],
+      "id": "99ef9a3a-006c-4311-a877-d827d760683b",
+      "name": "Set Salesforce and Attendee Details"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "B2niwrdjjIWz59FT",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/B2niwrdjjIWz59FT",
+          "cachedResultName": "Salesforce Pre call Integration (Don't Edit)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.attendee_email }}",
+            "company_name": "={{ $json.company_name }}",
+            "company_website_domain": "={{ $json.attendee_company_domain || \"Not Found\"}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "company_name",
+              "displayName": "company_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "company_website_domain",
+              "displayName": "company_website_domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        624
+      ],
+      "id": "1255fde6-a843-4378-954a-4ea504412754",
+      "name": "Call 'Salesforce Pre call Integration (Don't Edit)'",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3904,
+        864
+      ],
+      "id": "b206bee9-de2f-463e-90e0-0d2f82303358",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4672,
+        880
+      ],
+      "id": "f47461e8-b9ce-4c43-b6ff-1d073bdd17c8",
+      "name": "OpenAI Chat Model2"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "start.dateTime"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        464,
+        512
+      ],
+      "id": "c80a0919-b590-4976-ba4b-485b98ebdd09",
+      "name": "Sort"
+    }
+  ],
+  "connections": {
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Ignore shoutaboutus Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Attendee Details": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Company Description AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Set Attendee Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split in Batches Event wise": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split in Batches Event wise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Shout About Us Help AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches Event wise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content Formatter Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Attendee Details": {
+      "main": [
+        [
+          {
+            "node": "Enrich People Information using Apollo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Details After Apollo Enrichment": {
+      "main": [
+        [
+          {
+            "node": "Call 'Salesforce Pre call Integration (Don't Edit)'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Company Description AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Description AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shout About Us Help AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Set Details for Formatter Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Formatter Agent": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Details": {
+      "main": [
+        [
+          {
+            "node": "Shout About Us Help AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Details for Formatter Agent": {
+      "main": [
+        [
+          {
+            "node": "Content Formatter Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich People Information using Apollo": {
+      "main": [
+        [
+          {
+            "node": "Set Details After Apollo Enrichment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore shoutaboutus Emails": {
+      "main": [
+        [
+          {
+            "node": "Extract Attendee Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignore Cancelled Events": {
+      "main": [
+        [
+          {
+            "node": "Split in Batches Event wise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Salesforce and Attendee Details": {
+      "main": [
+        [
+          {
+            "node": "Company Description AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Salesforce Pre call Integration (Don't Edit)'": {
+      "main": [
+        [
+          {
+            "node": "Set Salesforce and Attendee Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Shout About Us Help AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Formatter Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Ignore Cancelled Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": null
+}
